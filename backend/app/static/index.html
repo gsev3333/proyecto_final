@@ -1,0 +1,949 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Historia Clínica Electrónica</title>
+  <link rel="stylesheet" href="/static/styles.css" />
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+      color: #333;
+    }
+    .container {
+      background: white;
+      padding: 30px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      max-width: 1200px;
+      width: 95%;
+      margin: 20px auto;
+      min-height: 80vh;
+    }
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 30px;
+      padding-bottom: 20px;
+      border-bottom: 2px solid #e9ecef;
+    }
+    .user-info {
+      font-size: 18px;
+      font-weight: bold;
+      color: #007bff;
+    }
+    h1 { text-align: center; color: #495057; margin-bottom: 30px; }
+    .login-tabs { display: flex; margin-bottom: 20px; justify-content: center; }
+    .tab {
+      flex: 1;
+      padding: 12px;
+      background: #f8f9fa;
+      border: 1px solid #dee2e6;
+      cursor: pointer;
+      font-size: 16px;
+      color: #495057;
+      transition: all 0.3s;
+    }
+    .tab.active { background: #007bff; color: white; border-color: #007bff; }
+    .tab:hover { background: #e9ecef; }
+    .login-form { display: none; }
+    .login-form.active { display: block; }
+    .form-group { margin-bottom: 15px; }
+    label { display: block; margin-bottom: 5px; color: #495057; font-weight: 500; }
+    input, textarea {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ced4da;
+      border-radius: 4px;
+      font-size: 16px;
+      transition: border-color 0.3s;
+    }
+    input:focus, textarea:focus { outline: none; border-color: #007bff; box-shadow: 0 0 0 2px rgba(0,123,255,0.25); }
+    button {
+      padding: 10px 20px;
+      background: #000;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      font-size: 16px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+    button:hover { background: #333; }
+    .status { text-align: center; margin-top: 10px; color: #666; }
+    .error { color: #dc3545; }
+    .hidden { display: none; }
+    .section { margin-bottom: 30px; }
+    .section h2 { color: #495057; border-bottom: 1px solid #dee2e6; padding-bottom: 10px; }
+    .patient-info { background: #f8f9fa; padding: 15px; border-radius: 4px; margin-bottom: 20px; }
+    .clinical-sections { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
+    .clinical-section { background: #f8f9fa; padding: 15px; border-radius: 4px; }
+    .clinical-section h3 { color: #495057; margin-top: 0; }
+    textarea { resize: vertical; min-height: 80px; }
+    .button-group { display: flex; gap: 10px; margin-top: 20px; }
+    .button { padding: 8px 16px; background: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer; }
+    .button:hover { background: #218838; }
+    .button.secondary { background: #6c757d; }
+    .button.secondary:hover { background: #545b62; }
+    .create-prompt { background: #fff3cd; border: 1px solid #ffeaa7; padding: 15px; border-radius: 4px; margin: 10px 0; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>Historia Clínica Electrónica</h1>
+      <div class="user-info" id="userInfo" style="display:none;"></div>
+    </div>
+
+    <div class="login-tabs" id="loginTabs">
+      <button class="tab active" id="tabMedico">Médico</button>
+      <button class="tab" id="tabAdmisionista">Admisionista</button>
+      <button class="tab" id="tabPaciente">Paciente</button>
+    </div>
+
+    <div class="login-form active" id="medicoForm">
+      <form id="loginMedicoForm">
+        <div class="form-group">
+          <label for="medicoUsername">Usuario:</label>
+          <input id="medicoUsername" name="username" required />
+        </div>
+        <div class="form-group">
+          <label for="medicoPassword">Contraseña:</label>
+          <input id="medicoPassword" name="password" type="password" required />
+        </div>
+        <button type="submit">Iniciar Sesión como Médico</button>
+      </form>
+    </div>
+
+    <div class="login-form" id="admisionistaForm">
+      <form id="loginAdmisionistaForm">
+        <div class="form-group">
+          <label for="admisionistaUsername">Usuario:</label>
+          <input id="admisionistaUsername" name="username" required />
+        </div>
+        <div class="form-group">
+          <label for="admisionistaPassword">Contraseña:</label>
+          <input id="admisionistaPassword" name="password" type="password" required />
+        </div>
+        <button type="submit">Iniciar Sesión como Admisionista</button>
+      </form>
+    </div>
+
+    <div class="login-form" id="pacienteForm">
+      <form id="loginPacienteForm">
+        <div class="form-group">
+          <label for="pacienteDocumento">Documento ID:</label>
+          <input id="pacienteDocumento" name="documento_id" required />
+        </div>
+        <div class="form-group">
+          <label for="pacientePassword">Contraseña:</label>
+          <input id="pacientePassword" name="password" type="password" required />
+        </div>
+        <button type="submit">Iniciar Sesión como Paciente</button>
+      </form>
+    </div>
+
+    <div id="loginStatus" class="status"></div>
+
+    <div class="section" id="medicoSection" style="display:none;">
+      <h2>Cargar Paciente</h2>
+      <div class="patient-info">
+        <label class="label">Documento:</label>
+        <input id="docInput" value="1001032936" />
+        <button class="button" id="btnLoad">Cargar paciente</button>
+      </div>
+      <div id="createPatientPrompt" class="create-prompt" style="display:none;">
+        <p>Paciente no encontrado. ¿Desea crearlo?</p>
+        <div id="createPatientForm" style="display:none;">
+          <label class="label">Nombre:</label>
+          <input id="newNombre" required />
+          <label class="label">Apellido:</label>
+          <input id="newApellido" required />
+          <label class="label">Fecha de Nacimiento:</label>
+          <input id="newFechaNacimiento" type="date" required />
+          <div class="button-group">
+            <button class="button" id="btnSubmitCreate">Crear Paciente</button>
+            <button class="button secondary" id="btnCancelCreate">Cancelar</button>
+          </div>
+        </div>
+        <button class="button" id="btnCreatePatient">Crear Paciente</button>
+      </div>
+      <div id="patientBox" style="display:none;">
+        <div class="patient-info">
+          <h2 id="pname"></h2>
+          <p><strong>Documento:</strong> <span id="pdoc"></span></p>
+          <p><strong>Fecha de Nacimiento:</strong> <span id="pfecha"></span></p>
+        </div>
+        <div id="clinicalSections" class="clinical-sections">
+          <div class="clinical-section">
+            <h3>Antecedentes de Interés</h3>
+            <textarea id="pAntecedentes" placeholder="Ingrese antecedentes..."></textarea>
+          </div>
+          <div class="clinical-section">
+            <h3>Anamnesis y Exploración</h3>
+            <textarea id="pAnamnesis" placeholder="Ingrese anamnesis..."></textarea>
+          </div>
+          <div class="clinical-section">
+            <h3>Evolución Clínica</h3>
+            <textarea id="pEvolucion" placeholder="Ingrese evolución..."></textarea>
+          </div>
+          <div class="clinical-section">
+            <h3>Órdenes Médicas</h3>
+            <textarea id="pOrdenes" placeholder="Ingrese órdenes..."></textarea>
+          </div>
+          <div class="clinical-section">
+            <h3>Tratamiento Farmacológico</h3>
+            <textarea id="pTratamiento" placeholder="Ingrese tratamiento..."></textarea>
+          </div>
+          <div class="clinical-section">
+            <h3>Planificación de Cuidados</h3>
+            <textarea id="pPlanificacion" placeholder="Ingrese planificación..."></textarea>
+          </div>
+          <div class="clinical-section">
+            <h3>Constantes y Datos Básicos</h3>
+            <textarea id="pConstantes" placeholder="Ingrese constantes..."></textarea>
+          </div>
+          <div class="clinical-section">
+            <h3>Interconsulta</h3>
+            <textarea id="pInterconsulta" placeholder="Ingrese interconsulta..."></textarea>
+          </div>
+          <div class="clinical-section">
+            <h3>Exploraciones Complementarias</h3>
+            <textarea id="pExploraciones" placeholder="Ingrese exploraciones..."></textarea>
+          </div>
+          <div class="clinical-section">
+            <h3>Consentimientos Informados</h3>
+            <textarea id="pConsentimientos" placeholder="Ingrese consentimientos..."></textarea>
+          </div>
+          <div class="clinical-section">
+            <h3>Información de Alta</h3>
+            <textarea id="pAlta" placeholder="Ingrese información de alta..."></textarea>
+          </div>
+          <div class="clinical-section">
+            <h3>Otra Información Clínica</h3>
+            <textarea id="pOtraInfo" placeholder="Ingrese otra información..."></textarea>
+          </div>
+          <div class="clinical-section">
+            <h3>Información de Anestesia</h3>
+            <textarea id="pAnestesia" placeholder="Ingrese información de anestesia..."></textarea>
+          </div>
+          <div class="clinical-section">
+            <h3>Información Quirúrgica</h3>
+            <textarea id="pQuirurgica" placeholder="Ingrese información quirúrgica..."></textarea>
+          </div>
+          <div class="clinical-section">
+            <h3>Información de Urgencia</h3>
+            <textarea id="pUrgencia" placeholder="Ingrese información de urgencia..."></textarea>
+          </div>
+          <div class="clinical-section">
+            <h3>Información del Parto</h3>
+            <textarea id="pParto" placeholder="Ingrese información del parto..."></textarea>
+          </div>
+          <div class="clinical-section">
+            <h3>Información de Anatomía Patológica</h3>
+            <textarea id="pPatologica" placeholder="Ingrese información de anatomía patológica..."></textarea>
+          </div>
+          <div class="clinical-section">
+            <h3>Datos Sociales</h3>
+            <textarea id="pSociales" placeholder="Ingrese datos sociales..."></textarea>
+          </div>
+        </div>
+        <div class="clinical-section">
+          <h3>Notas del Médico</h3>
+          <textarea id="medicoNotas" placeholder="Agregar notas adicionales..."></textarea>
+        </div>
+        <div class="button-group">
+          <button id="btnUpdateNotes">Actualizar Historia Clínica</button>
+          <button class="button" id="btnPdf">Descargar PDF</button>
+        </div>
+      </div>
+      <div id="admissionsBox" style="display:none;">
+        <h3>Admisiones del Paciente</h3>
+        <ul id="patientAdmissionsList"></ul>
+      </div>
+    </div>
+
+    <div class="section" id="admisionistaSection" style="display:none;">
+      <h2>Panel de Admisionista</h2>
+      <div class="section">
+        <h3>Crear Cita Médica</h3>
+        <form id="createAdmissionForm">
+          <div class="form-group">
+            <label for="admissionDocumento">Documento del Paciente:</label>
+            <input id="admissionDocumento" name="documento_id" required />
+          </div>
+          <div class="form-group">
+            <label for="admissionFecha">Fecha de Ingreso:</label>
+            <input id="admissionFecha" name="fecha_ingreso" type="datetime-local" required />
+          </div>
+          <div class="form-group">
+            <label for="admissionMotivo">Motivo:</label>
+            <textarea id="admissionMotivo" name="motivo"></textarea>
+          </div>
+          <button type="submit">Crear Cita</button>
+        </form>
+      </div>
+      <div class="section">
+        <h3>Inicios de Sesión Recientes</h3>
+        <button class="button" id="btnLoadLogs">Cargar Logs</button>
+        <table id="logsTable" style="width:100%; border-collapse:collapse; margin-top:20px; display:none;">
+          <thead>
+            <tr style="background:#f8f9fa;">
+              <th style="border:1px solid #dee2e6; padding:8px;">Usuario</th>
+              <th style="border:1px solid #dee2e6; padding:8px;">Rol</th>
+              <th style="border:1px solid #dee2e6; padding:8px;">Fecha/Hora</th>
+              <th style="border:1px solid #dee2e6; padding:8px;">IP</th>
+            </tr>
+          </thead>
+          <tbody id="logsBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="section" id="pacienteSection" style="display:none;">
+      <h2>Mis Resultados</h2>
+      <div id="myPatientBox" class="patient-info">
+        <h2 id="myPname"></h2>
+        <p><strong>Documento:</strong> <span id="myPdoc"></span></p>
+        <p><strong>Nombre:</strong> <span id="myPnameFull"></span></p>
+        <button class="button" id="btnMyPdf">Descargar Mi PDF</button>
+      </div>
+      <div id="myAdmissions" style="display:none;">
+        <h3>Mis Citas Médicas</h3>
+        <ul id="admissionsList"></ul>
+      </div>
+    </div>
+
+
+    <div class="section">
+      <h2>Utilidades</h2>
+      <button class="button" id="btnClear">Cerrar sesión</button>
+    </div>
+
+    <div id="log" style="margin-top:18px; color:#555; font-size:0.9rem"></div>
+  </div>
+
+<script>
+/* Helpers */
+function setStatus(txt, isError = false) {
+  const el = document.getElementById('loginStatus');
+  el.innerText = txt;
+  el.className = isError ? 'status error' : 'status';
+}
+
+let currentRole = null;
+
+/* Login for Medico */
+async function loginMedico(username, password) {
+  setStatus('Iniciando sesión como médico...');
+  try {
+    const body = new URLSearchParams();
+    body.append('username', username);
+    body.append('password', password);
+
+    const resp = await fetch(location.origin + '/token/medico', { method: 'POST', body });
+    if (!resp.ok) {
+      const text = await resp.text();
+      setStatus('Error: Credenciales inválidas', true);
+      throw new Error('Login failed: ' + text);
+    }
+    const data = await resp.json();
+    localStorage.setItem('jwt', data.access_token);
+    localStorage.setItem('username', username);
+    currentRole = data.role;
+    localStorage.setItem('role', data.role);
+    setStatus('Logueado como médico');
+    updateUIAfterLogin(username, 'Médico');
+    showSections();
+    return data.access_token;
+  } catch (err) {
+    setStatus('Error en login', true);
+    throw err;
+  }
+}
+
+/* Login for Admisionista */
+async function loginAdmisionista(username, password) {
+  setStatus('Iniciando sesión como admisionista...');
+  try {
+    const body = new URLSearchParams();
+    body.append('username', username);
+    body.append('password', password);
+
+    const resp = await fetch(location.origin + '/token/admisionista', { method: 'POST', body });
+    if (!resp.ok) {
+      const text = await resp.text();
+      setStatus('Error: Credenciales inválidas', true);
+      throw new Error('Login failed: ' + text);
+    }
+    const data = await resp.json();
+    localStorage.setItem('jwt', data.access_token);
+    localStorage.setItem('username', username);
+    currentRole = data.role;
+    localStorage.setItem('role', data.role);
+    setStatus('Logueado como admisionista');
+    updateUIAfterLogin(username, 'Admisionista');
+    showSections();
+    return data.access_token;
+  } catch (err) {
+    setStatus('Error en login', true);
+    throw err;
+  }
+}
+
+/* Login for Paciente */
+async function loginPaciente(documento_id, password) {
+  setStatus('Iniciando sesión como paciente...');
+  try {
+    const body = new URLSearchParams();
+    body.append('documento_id', documento_id);
+    body.append('password', password);
+
+    const resp = await fetch(location.origin + '/token/paciente', { method: 'POST', body });
+    if (!resp.ok) {
+      const text = await resp.text();
+      setStatus('Error: Credenciales inválidas', true);
+      throw new Error('Login failed: ' + text);
+    }
+    const data = await resp.json();
+    localStorage.setItem('jwt', data.access_token);
+    localStorage.setItem('username', documento_id);
+    currentRole = data.role;
+    localStorage.setItem('role', data.role);
+    setStatus('Logueado como paciente');
+    updateUIAfterLogin(documento_id, 'Paciente');
+    showSections();
+    loadMyData(documento_id);
+    return data.access_token;
+  } catch (err) {
+    setStatus('Error en login', true);
+    throw err;
+  }
+}
+
+/* Obtiene token desde localStorage */
+function getToken(){
+  return localStorage.getItem('jwt') || '';
+}
+
+/* Actualiza UI después de login */
+function updateUIAfterLogin(username, roleName) {
+  document.getElementById('userInfo').innerText = `${roleName}: ${username}`;
+  document.getElementById('userInfo').style.display = 'block';
+  document.getElementById('loginTabs').style.display = 'none';
+}
+
+/* Muestra secciones según rol */
+function showSections(){
+  const role = currentRole || localStorage.getItem('role');
+  document.getElementById('medicoSection').style.display = (role === 'medico' || role === 'admisionista') ? 'block' : 'none';
+  document.getElementById('admisionistaSection').style.display = role === 'admisionista' ? 'block' : 'none';
+  document.getElementById('pacienteSection').style.display = role === 'paciente' ? 'block' : 'none';
+  document.getElementById('tabPaciente').style.display = (role === 'medico' || role === 'admisionista') ? 'none' : 'inline-block';
+}
+
+/* Carga datos del paciente logueado */
+async function loadMyData(){
+  const username = localStorage.getItem('username');
+  setLog('Cargando mis datos...');
+  const data = await cargarPaciente(username);
+  if(data){
+    document.getElementById('myPatientBox').style.display = 'block';
+    document.getElementById('myPname').innerText = (data.nombre||'') + ' ' + (data.apellido||'');
+    document.getElementById('myPdoc').innerText = data.documento_id || '';
+    document.getElementById('myPnotes').innerText = data.observaciones || '';
+  } else {
+    document.getElementById('myPatientBox').style.display = 'none';
+  }
+}
+
+/* Carga paciente usando el token almacenado */
+async function cargarPaciente(documento){
+  setLog('Cargando paciente...');
+  try {
+    const token = getToken();
+    if(!token){
+      setLog('No hay token disponible', true);
+      return null;
+    }
+    const resp = await fetch(location.origin + '/paciente/' + encodeURIComponent(documento), {
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    if(resp.status === 401){
+      setLog('401 Unauthorized — token inválido. Intenta login de nuevo.', true);
+      return null;
+    }
+    if(resp.status === 404){
+      setLog('Paciente no encontrado (404).', true);
+      return null;
+    }
+    if(!resp.ok){
+      const txt = await resp.text();
+      setLog('Error al cargar paciente: ' + txt, true);
+      return null;
+    }
+    const data = await resp.json();
+    setLog('Paciente cargado correctamente.');
+    return data;
+  } catch(err){
+    setLog('Error en cargarPaciente: ' + (err.message||err), true);
+    return null;
+  }
+}
+
+/* Descargar PDF */
+async function descargarPDF(documento){
+  setLog('Solicitando PDF...');
+  try {
+    const token = localStorage.getItem('jwt');
+    if(!token){ setLog('No autenticado', true); return; }
+    const resp = await fetch(location.origin + '/exportar_pdf/' + encodeURIComponent(documento), {
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    if(!resp.ok){
+      const txt = await resp.text();
+      setLog('Error al generar PDF: ' + txt, true);
+      return;
+    }
+    const blob = await resp.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'historia_' + documento + '.pdf';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setLog('PDF descargado.');
+  } catch(err){
+    setLog('Error en descargarPDF: ' + (err.message||err), true);
+  }
+}
+
+/* Crear usuario */
+async function createUser(formData){
+  setLog('Creando usuario...');
+  try {
+    const token = getToken();
+    if(!token){ setLog('No autenticado', true); return; }
+    const resp = await fetch(location.origin + '/users', {
+      method: 'POST',
+      body: formData,
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    if(!resp.ok){
+      const txt = await resp.text();
+      alert('Error al crear usuario: ' + txt);
+      return;
+    }
+    const data = await resp.json();
+    alert(data.message);
+  } catch(err){
+    alert('Error en createUser: ' + (err.message||err));
+  }
+}
+
+/* Actualizar paciente */
+async function updatePaciente(documento, data) {
+  setLog('Actualizando paciente...');
+  try {
+    const token = getToken();
+    if (!token) { setLog('No autenticado', true); return; }
+    const formData = new FormData();
+    for (const [key, value] of Object.entries(data)) {
+      formData.append(key, value);
+    }
+    const resp = await fetch(location.origin + '/paciente/' + encodeURIComponent(documento), {
+      method: 'PUT',
+      headers: { 'Authorization': 'Bearer ' + token },
+      body: formData
+    });
+    if (!resp.ok) {
+      const txt = await resp.text();
+      alert('Error al actualizar paciente: ' + txt);
+      return;
+    }
+    alert('Historia clínica actualizada');
+  } catch (err) {
+    alert('Error en updatePaciente: ' + (err.message || err));
+  }
+}
+
+/* Tab switching */
+document.getElementById('tabMedico').addEventListener('click', () => {
+  document.getElementById('tabMedico').classList.add('active');
+  document.getElementById('tabAdmisionista').classList.remove('active');
+  document.getElementById('tabPaciente').classList.remove('active');
+  document.getElementById('medicoForm').classList.add('active');
+  document.getElementById('admisionistaForm').classList.remove('active');
+  document.getElementById('pacienteForm').classList.remove('active');
+});
+
+document.getElementById('tabAdmisionista').addEventListener('click', () => {
+  document.getElementById('tabAdmisionista').classList.add('active');
+  document.getElementById('tabMedico').classList.remove('active');
+  document.getElementById('tabPaciente').classList.remove('active');
+  document.getElementById('admisionistaForm').classList.add('active');
+  document.getElementById('medicoForm').classList.remove('active');
+  document.getElementById('pacienteForm').classList.remove('active');
+});
+
+document.getElementById('tabPaciente').addEventListener('click', () => {
+  document.getElementById('tabPaciente').classList.add('active');
+  document.getElementById('tabMedico').classList.remove('active');
+  document.getElementById('tabAdmisionista').classList.remove('active');
+  document.getElementById('pacienteForm').classList.add('active');
+  document.getElementById('medicoForm').classList.remove('active');
+  document.getElementById('admisionistaForm').classList.remove('active');
+});
+
+/* Login forms */
+document.getElementById('loginMedicoForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const username = document.getElementById('medicoUsername').value;
+  const password = document.getElementById('medicoPassword').value;
+  try { await loginMedico(username, password); } catch (e) {}
+});
+
+document.getElementById('loginAdmisionistaForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const username = document.getElementById('admisionistaUsername').value;
+  const password = document.getElementById('admisionistaPassword').value;
+  try { await loginAdmisionista(username, password); } catch (e) {}
+});
+
+document.getElementById('loginPacienteForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const documento_id = document.getElementById('pacienteDocumento').value;
+  const password = document.getElementById('pacientePassword').value;
+  try { await loginPaciente(documento_id, password); } catch (e) {}
+});
+
+/* Muestra secciones según rol */
+function showSections() {
+  const role = currentRole || localStorage.getItem('role');
+  document.getElementById('medicoSection').style.display = (role === 'medico' || role === 'admisionista') ? 'block' : 'none';
+  document.getElementById('admisionistaSection').style.display = role === 'admisionista' ? 'block' : 'none';
+  document.getElementById('pacienteSection').style.display = role === 'paciente' ? 'block' : 'none';
+  document.getElementById('loginStatus').style.display = role ? 'none' : 'block';
+  document.getElementById('login-tabs').style.display = role ? 'none' : 'flex';
+  document.getElementById('medicoForm').style.display = role ? 'none' : 'block';
+  document.getElementById('admisionistaForm').style.display = 'none';
+  document.getElementById('pacienteForm').style.display = 'none';
+}
+
+/* Carga datos del paciente logueado */
+async function loadMyData(documento_id) {
+  const data = await cargarPaciente(documento_id);
+  if (data) {
+    document.getElementById('myPatientBox').style.display = 'block';
+    document.getElementById('myPname').innerText = (data.nombre || '') + ' ' + (data.apellido || '');
+    document.getElementById('myPdoc').innerText = data.documento_id || '';
+    document.getElementById('myPnameFull').innerText = (data.nombre || '') + ' ' + (data.apellido || '');
+    // Mostrar admisiones
+    if (data.admissions && data.admissions.length > 0) {
+      const ul = document.getElementById('admissionsList');
+      ul.innerHTML = '';
+      data.admissions.forEach(a => {
+        const li = document.createElement('li');
+        li.textContent = `Fecha: ${a.fecha_ingreso}, Motivo: ${a.motivo || 'Sin motivo'}`;
+        ul.appendChild(li);
+      });
+      document.getElementById('myAdmissions').style.display = 'block';
+    } else {
+      document.getElementById('myAdmissions').style.display = 'none';
+    }
+  } else {
+    document.getElementById('myPatientBox').style.display = 'none';
+    document.getElementById('myAdmissions').style.display = 'none';
+  }
+}
+
+/* Helpers */
+function setLog(txt, isError = false) {
+  // For now, use status
+  setStatus(txt, isError);
+}
+
+/* Carga paciente */
+async function cargarPaciente(documento) {
+  try {
+    const token = getToken();
+    if (!token) return null;
+    const resp = await fetch(location.origin + '/paciente/' + encodeURIComponent(documento), {
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    if (!resp.ok) return null;
+    return await resp.json();
+  } catch (err) {
+    return null;
+  }
+}
+
+/* Descargar PDF */
+async function descargarPDF(documento) {
+  try {
+    const token = getToken();
+    if (!token) return;
+    const resp = await fetch(location.origin + '/exportar_pdf/' + encodeURIComponent(documento), {
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    if (!resp.ok) return;
+    const blob = await resp.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'historia_' + documento + '.pdf';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  } catch (err) {}
+}
+
+
+document.getElementById('btnLoad').addEventListener('click', async () => {
+  const d = document.getElementById('docInput').value.trim();
+  if (!d) return;
+  const data = await cargarPaciente(d);
+  if (data) {
+    document.getElementById('patientBox').style.display = 'block';
+    document.getElementById('createPatientPrompt').style.display = 'none';
+    document.getElementById('pname').innerText = (data.nombre || '') + ' ' + (data.apellido || '');
+    document.getElementById('pdoc').innerText = data.documento_id || '';
+    document.getElementById('pfecha').innerText = data.fecha_nacimiento || '';
+    document.getElementById('pAntecedentes').value = data.antecedentes_interes || '';
+    document.getElementById('pAnamnesis').value = data.anamnesis_exploracion || '';
+    document.getElementById('pEvolucion').value = data.evolucion_clinica || '';
+    document.getElementById('pOrdenes').value = data.ordenes_medicas || '';
+    document.getElementById('pTratamiento').value = data.tratamiento_farmacologico || '';
+    document.getElementById('pPlanificacion').value = data.planificacion_cuidados || '';
+    document.getElementById('pConstantes').value = data.constantes_datos_basicos || '';
+    document.getElementById('pInterconsulta').value = data.interconsulta || '';
+    document.getElementById('pExploraciones').value = data.exploraciones_complementarias || '';
+    document.getElementById('pConsentimientos').value = data.consentimientos_informados || '';
+    document.getElementById('pAlta').value = data.informacion_alta || '';
+    document.getElementById('pOtraInfo').value = data.otra_informacion_clinica || '';
+    document.getElementById('pAnestesia').value = data.informacion_anestesia || '';
+    document.getElementById('pQuirurgica').value = data.informacion_quirurgica || '';
+    document.getElementById('pUrgencia').value = data.informacion_urgencia || '';
+    document.getElementById('pParto').value = data.informacion_parto || '';
+    document.getElementById('pPatologica').value = data.informacion_anatomia_patologica || '';
+    document.getElementById('pSociales').value = data.datos_sociales || '';
+    document.getElementById('medicoNotas').value = data.notas_medico || '';
+    // Mostrar admisiones
+    if (data.admissions && data.admissions.length > 0) {
+      const ul = document.getElementById('patientAdmissionsList');
+      ul.innerHTML = '';
+      data.admissions.forEach(a => {
+        const li = document.createElement('li');
+        li.textContent = `ID: ${a.id}, Fecha: ${a.fecha_ingreso}, Motivo: ${a.motivo || 'Sin motivo'}`;
+        ul.appendChild(li);
+      });
+      document.getElementById('admissionsBox').style.display = 'block';
+    } else {
+      document.getElementById('admissionsBox').style.display = 'none';
+    }
+  } else {
+    document.getElementById('patientBox').style.display = 'none';
+    document.getElementById('createPatientPrompt').style.display = 'block';
+    document.getElementById('admissionsBox').style.display = 'none';
+  }
+});
+
+document.getElementById('btnUpdateNotes').addEventListener('click', async () => {
+  const doc = document.getElementById('pdoc').innerText;
+  if (!doc) return;
+  const updateData = {
+    antecedentes_interes: document.getElementById('pAntecedentes').value,
+    anamnesis_exploracion: document.getElementById('pAnamnesis').value,
+    evolucion_clinica: document.getElementById('pEvolucion').value,
+    ordenes_medicas: document.getElementById('pOrdenes').value,
+    tratamiento_farmacologico: document.getElementById('pTratamiento').value,
+    planificacion_cuidados: document.getElementById('pPlanificacion').value,
+    constantes_datos_basicos: document.getElementById('pConstantes').value,
+    interconsulta: document.getElementById('pInterconsulta').value,
+    exploraciones_complementarias: document.getElementById('pExploraciones').value,
+    consentimientos_informados: document.getElementById('pConsentimientos').value,
+    informacion_alta: document.getElementById('pAlta').value,
+    otra_informacion_clinica: document.getElementById('pOtraInfo').value,
+    informacion_anestesia: document.getElementById('pAnestesia').value,
+    informacion_quirurgica: document.getElementById('pQuirurgica').value,
+    informacion_urgencia: document.getElementById('pUrgencia').value,
+    informacion_parto: document.getElementById('pParto').value,
+    informacion_anatomia_patologica: document.getElementById('pPatologica').value,
+    datos_sociales: document.getElementById('pSociales').value,
+    notas_medico: document.getElementById('medicoNotas').value
+  };
+  await updatePaciente(doc, updateData);
+  // Reload patient data
+  const data = await cargarPaciente(doc);
+  if (data) {
+    // Update fields
+    document.getElementById('pAntecedentes').value = data.antecedentes_interes || '';
+    document.getElementById('pAnamnesis').value = data.anamnesis_exploracion || '';
+    document.getElementById('pEvolucion').value = data.evolucion_clinica || '';
+    document.getElementById('pOrdenes').value = data.ordenes_medicas || '';
+    document.getElementById('pTratamiento').value = data.tratamiento_farmacologico || '';
+    document.getElementById('pPlanificacion').value = data.planificacion_cuidados || '';
+    document.getElementById('pConstantes').value = data.constantes_datos_basicos || '';
+    document.getElementById('pInterconsulta').value = data.interconsulta || '';
+    document.getElementById('pExploraciones').value = data.exploraciones_complementarias || '';
+    document.getElementById('pConsentimientos').value = data.consentimientos_informados || '';
+    document.getElementById('pAlta').value = data.informacion_alta || '';
+    document.getElementById('pOtraInfo').value = data.otra_informacion_clinica || '';
+    document.getElementById('pAnestesia').value = data.informacion_anestesia || '';
+    document.getElementById('pQuirurgica').value = data.informacion_quirurgica || '';
+    document.getElementById('pUrgencia').value = data.informacion_urgencia || '';
+    document.getElementById('pParto').value = data.informacion_parto || '';
+    document.getElementById('pPatologica').value = data.informacion_anatomia_patologica || '';
+    document.getElementById('pSociales').value = data.datos_sociales || '';
+    document.getElementById('medicoNotas').value = data.notas_medico || '';
+  }
+});
+
+document.getElementById('btnCreatePatient').addEventListener('click', () => {
+  document.getElementById('createPatientForm').style.display = 'block';
+  document.getElementById('btnCreatePatient').style.display = 'none';
+});
+
+document.getElementById('btnCancelCreate').addEventListener('click', () => {
+  document.getElementById('createPatientForm').style.display = 'none';
+  document.getElementById('btnCreatePatient').style.display = 'inline-block';
+});
+
+document.getElementById('btnSubmitCreate').addEventListener('click', async () => {
+  const documento_id = document.getElementById('docInput').value.trim();
+  const nombre = document.getElementById('newNombre').value.trim();
+  const apellido = document.getElementById('newApellido').value.trim();
+  const fecha_nacimiento = document.getElementById('newFechaNacimiento').value;
+  if (!documento_id || !nombre || !apellido || !fecha_nacimiento) {
+    alert('Todos los campos son requeridos');
+    return;
+  }
+  const formData = new FormData();
+  formData.append('documento_id', documento_id);
+  formData.append('nombre', nombre);
+  formData.append('apellido', apellido);
+  formData.append('fecha_nacimiento', fecha_nacimiento);
+  formData.append('role', 'paciente');
+  await createUser(formData);
+  // After creation, try to load the patient
+  const data = await cargarPaciente(documento_id);
+  if (data) {
+    document.getElementById('btnLoad').click();
+  }
+});
+
+document.getElementById('btnPdf').addEventListener('click', async () => {
+  const doc = document.getElementById('pdoc').innerText;
+  if (!doc) return;
+  await descargarPDF(doc);
+});
+
+document.getElementById('btnMyPdf').addEventListener('click', async () => {
+  const doc = localStorage.getItem('username');
+  if (!doc) return;
+  await descargarPDF(doc);
+});
+
+document.getElementById('btnClear').addEventListener('click', () => {
+  localStorage.clear();
+  currentRole = null;
+  document.getElementById('userInfo').style.display = 'none';
+  document.getElementById('loginTabs').style.display = 'flex';
+  location.reload();
+});
+
+/* Crear cita */
+async function createAdmission(data) {
+  setLog('Creando cita...');
+  try {
+    const token = getToken();
+    if (!token) { setLog('No autenticado', true); return; }
+    const resp = await fetch(location.origin + '/admission', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
+    if (!resp.ok) {
+      const txt = await resp.text();
+      alert('Error al crear cita: ' + txt);
+      return;
+    }
+    alert('Cita creada exitosamente');
+  } catch (err) {
+    alert('Error en createAdmission: ' + (err.message || err));
+  }
+}
+
+/* Cargar logs de login */
+async function loadLoginLogs() {
+  setLog('Cargando logs...');
+  try {
+    const token = getToken();
+    if (!token) { setLog('No autenticado', true); return; }
+    const resp = await fetch(location.origin + '/login_logs', {
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    if (!resp.ok) {
+      const txt = await resp.text();
+      alert('Error al cargar logs: ' + txt);
+      return;
+    }
+    const logs = await resp.json();
+    const tbody = document.getElementById('logsBody');
+    tbody.innerHTML = '';
+    logs.forEach(log => {
+      const row = document.createElement('tr');
+      row.innerHTML = `
+        <td style="border:1px solid #dee2e6; padding:8px;">${log.username}</td>
+        <td style="border:1px solid #dee2e6; padding:8px;">${log.role}</td>
+        <td style="border:1px solid #dee2e6; padding:8px;">${new Date(log.timestamp).toLocaleString()}</td>
+        <td style="border:1px solid #dee2e6; padding:8px;">${log.ip_address || 'N/A'}</td>
+      `;
+      tbody.appendChild(row);
+    });
+    document.getElementById('logsTable').style.display = 'table';
+  } catch (err) {
+    alert('Error en loadLoginLogs: ' + (err.message || err));
+  }
+}
+
+document.getElementById('createAdmissionForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const documento_id = document.getElementById('admissionDocumento').value.trim();
+  const fecha_ingreso = document.getElementById('admissionFecha').value;
+  const motivo = document.getElementById('admissionMotivo').value;
+  if (!documento_id || !fecha_ingreso) {
+    alert('Documento y fecha son requeridos');
+    return;
+  }
+  await createAdmission({ documento_id, fecha_ingreso, motivo });
+});
+
+document.getElementById('btnLoadLogs').addEventListener('click', loadLoginLogs);
+
+window.addEventListener('load', () => {
+  const role = localStorage.getItem('role');
+  const username = localStorage.getItem('username');
+  if (role && username) {
+    currentRole = role;
+    let roleName = 'Usuario';
+    if (role === 'medico') roleName = 'Médico';
+    else if (role === 'admisionista') roleName = 'Admisionista';
+    else if (role === 'paciente') roleName = 'Paciente';
+    updateUIAfterLogin(username, roleName);
+    showSections();
+    if (role === 'paciente') {
+      loadMyData(username);
+    }
+  }
+});
+</script>
+</body>
+</html>
+
