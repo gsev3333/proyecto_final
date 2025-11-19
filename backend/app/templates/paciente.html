@@ -1,0 +1,44 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Paciente</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+  <nav>
+    <button id="logoutBtn">Cerrar sesión</button>
+  </nav>
+
+  <main>
+    <h1>Paciente: {{ paciente.nombre }} {{ paciente.apellido }}</h1>
+    <p>Documento: {{ paciente.documento_id }}</p>
+    <p>Notas: {{ paciente.observaciones.notas }}</p>
+
+    <button id="downloadPdf">Descargar PDF</button>
+  </main>
+
+<script>
+const token = localStorage.getItem('jwt');
+if(!token) location.href = '/ui/login';
+
+document.getElementById('logoutBtn').addEventListener('click', ()=>{ localStorage.removeItem('jwt'); location.href='/ui/login'; });
+
+document.getElementById('downloadPdf').addEventListener('click', async ()=>{
+  const resp = await fetch('/exportar_pdf/{{ paciente.documento_id }}', {
+    headers: { 'Authorization': 'Bearer ' + token }
+  });
+  if(!resp.ok){ alert('Error al generar PDF'); return; }
+  const blob = await resp.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'historia_{{ paciente.documento_id }}.pdf';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+});
+</script>
+</body>
+</html>
