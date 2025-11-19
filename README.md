@@ -16,6 +16,34 @@ La arquitectura del sistema se basa en una separación clara de responsabilidade
 
 La arquitectura soporta despliegue en contenedores Docker y orquestación con Kubernetes para entornos de producción.
 
+## Capturas de Pantalla
+
+A continuación, se muestran capturas de pantalla de la aplicación en funcionamiento:
+
+### 1. Página de Login
+![Página de Login](images/login.png)
+Interfaz principal de autenticación con opciones para Médico, Admisionista y Paciente.
+
+### 2. Panel de Médico
+![Panel de Médico](images/panel_medico.png)
+Vista del médico para cargar y editar historias clínicas de pacientes.
+
+### 3. Panel de Admisionista
+![Panel de Admisionista](images/panel_admisionista.png)
+Interfaz del admisionista para crear admisiones y gestionar pacientes.
+
+### 4. Vista del Paciente
+![Vista del Paciente](images/vista_paciente.png)
+Panel del paciente mostrando su información y citas médicas.
+
+### 5. Formulario de Creación de Paciente
+![Creación de Paciente](images/crear_paciente.png)
+Formulario para registrar nuevos pacientes en el sistema.
+
+### 6. PDF Exportado
+![PDF Exportado](images/pdf_exportado.png)
+Ejemplo del PDF generado con la historia clínica completa, incluyendo admisiones.
+
 ## Instalación y Configuración Local
 
 Para ejecutar el proyecto en un entorno local, sigue estos pasos:
