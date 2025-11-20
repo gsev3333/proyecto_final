@@ -67,29 +67,31 @@ Para ejecutar el proyecto en un entorno local, sigue estos pasos:
 
 4. **Ejecuta la aplicación**:
    ```
-   uvicorn app.main:app --reload
+   uvicorn app.main:app --reload --host 0.0.0.0
    ```
 
-   La aplicación estará disponible en `http://localhost:8000`.
+   La aplicación estará disponible en `http://localhost:8000` y accesible desde otros dispositivos en la red local usando la IP de la máquina host (ej. `http://192.168.1.X:8000`).
 
 Nota: Para desarrollo local, se utiliza SQLite por defecto. Para producción, configura PostgreSQL con Citus.
 
 ## Construcción y Ejecución con Docker
 
-El proyecto incluye un Dockerfile para contenerización:
+El proyecto incluye un Dockerfile para contenerización y está configurado para ejecutarse con SQLite por defecto:
 
 1. **Construye la imagen Docker**:
    ```
    cd backend
-   docker build -t middleware-citus:1.0 .
+   docker build -t fastapi-app .
    ```
 
 2. **Ejecuta el contenedor**:
    ```
-   docker run -p 8000:8000 -e DATABASE_URL="postgresql://postgres:postgres@citus-coordinator:5432/historias" -e JWT_SECRET="tu_secreto_jwt" middleware-citus:1.0
+   docker run -d -p 0.0.0.0:8000:8000 fastapi-app
    ```
 
-   Asegúrate de tener la base de datos Citus ejecutándose si usas PostgreSQL.
+   La aplicación estará disponible en `http://localhost:8000` y accesible desde otros dispositivos en la red local usando la IP de la máquina host (ej. `http://192.168.1.X:8000`). Esto permite el acceso desde celulares, tablets u otros dispositivos conectados a la misma red.
+
+   Nota: El contenedor utiliza SQLite por defecto, por lo que no requiere configuración adicional de base de datos.
 
 ## Despliegue en Kubernetes
 

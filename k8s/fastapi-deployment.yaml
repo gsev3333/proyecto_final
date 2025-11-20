@@ -14,11 +14,13 @@ spec:
     spec:
       containers:
       - name: middleware
-        image: middleware-citus:1.0
+        image: fastapi-app
         imagePullPolicy: Never
         ports:
         - containerPort: 8000
         env:
+        - name: DATABASE_URL
+          value: "sqlite:///./clinical.db"
         - name: JWT_SECRET
           valueFrom:
             secretKeyRef:
